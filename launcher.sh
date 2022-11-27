@@ -27,7 +27,7 @@ selection_dialog() {
         echo "Running the following tests:"
         for sel in "${choices[@]}"; do
             printf "\t%s\n" "${scripts[$sel]}"
-            bash ./scripts/"${scripts[$sel]}"
+            bash ./scripts/"${scripts[$sel]}" 
             cleanup "${scripts[$sel]}"
         done
     else
