@@ -2,12 +2,13 @@
 
 error() {
 	echo "$1" >&2
+	echo "Valor de retorno: $2" >&2
 	exit "$2"
 }
 
 run_checks() {
 	## TODO quitar esto para el script final
-	# test "$(id -u)" = 0 || error "$0 debe ejecutarse como root"
+	test "$(id -u)" = 0 || error "$0 debe ejecutarse como root" 1
 
 	# check that there's at least 2 arguments
 	test $# -ge 2 || error "Uso: $0 <grupo> <usuario1> <usuario2> <...>" 2
@@ -36,15 +37,19 @@ create_users() {
 
 check_open_ssl_installed() {
 	# check that openssl is installed
-	which openssl >/dev/null || echo "No se encontró openssl" >&2
-	echo "Instalando openssl"
-	apt-get install openssl
+	if [ "$(which openssl >/dev/null)" ]; then
+		echo "No se encontró openssl" >&2
+		echo "Instalando openssl" >&2
+		apt-get install openssl
+	fi
 }
 
-crate_random_users_passwords() {
+create_random_users_passwords() {
 	check_open_ssl_installed
 	for user in "${@:2}"; do
-		echo "$user:$(openssl rand -base64 16)" | chpasswd
+		pass="$user:$(openssl rand -base64 8)"
+		echo "$pass" | chpasswd
+		echo "$pass"
 	done
 }
 
@@ -68,8 +73,7 @@ main() {
 	create_random_users_passwords "$@"
 	add_users_to_group "$@"
 	create_user_dirs "$@"
-	crate_random_users_passwords "$@"
 }
 
-# main "$@"
-echo "Crear usuarios"
+main "$@"
+# echo "Crear usuarios"

@@ -7,7 +7,7 @@
 # if it is, copy the scripts directory to ~/Documents/scripts
 # and run the tests from there
 # if it is not, run the tests from the current directory
-if [ "$1" = "--nico" ]; then
+if [ "$1" = "--copy_directory" ]; then
     cd ~/AdminSist/ || exit
     cp -r ~/AdminSist/* ~/Documents/AdminSist/
     # run launcher again from the new directory
@@ -84,48 +84,29 @@ test_and_cleanup() {
 # testing function which is given a command to run and the expected output
 # if the output is not the same as the expected output, the test fails
 my_test() {
-    ret_val="$?"
-    if [ "$ret_val" -eq "$2" ]; then
+    if [ "$?" -eq "$2" ]; then
         printf "\t%s\n" "Test passed ✅"
     else
-        printf "\t%s\%s\n" "Test failed ❌ ->" " Expected: $2 : Actual: $ret_val"
-        [ "$3" ] && echo "Running cleanup" && "$3" # cleanup function
-        exit 1
-    fi
-}
-assert() {
-    if [ "$1" -ne "$2" ]; then
-        echo "Test failed ❌ ->" " Expected: $2 : Actual: $1"
-        [ "$3" ] && echo "Running cleanup" && "$3" # cleanup function
+        printf "\t%s\%s\n" "Test failed ❌ ->" " Expected: $2 : Actual: $1"
         exit 1
     fi
 }
 
-test5_cleanup() {
-    # delete the users using a loop and the delete_user function
-    sudo groupdel proyectoX
-    for user in usu1 usu2 usu3; do
-        sudo userdel "$user"
-        sudo rm -rf "/home/$user"
-    done
-    echo "Running cleanup for test 5 done"
-}
 crear_usuarios_tests() {
     # try to call the script wituhout being superuser
     echo "Running tests for crear_usuarios.sh"
     test_location="./scripts/crear_usuarios.sh"
     echo "Test 1: Not superuser, return should be 1"
-    my_test "$(bash "$test_location" 2>&1)" 1
+    my_test "$(bash "$test_location" 2>&1 >/dev/null)" 1
 
     echo "Test 2: Wrong number of argument, return should be 2"
-    my_test "$(sudo bash "$test_location" 2>&1)" 2
+    my_test "$(sudo bash "$test_location" 2>&1 >/dev/null)" 2
 
     echo "Test 3: File/directory already exists in /srv with the same name as given group, return should be 3"
-    sudo mkdir /srv/test_dir
-    my_test "$(sudo bash "$test_location" test_dir fakeuser)" 3
-    sudo rmdir /srv/test_dir
+    sudo touch /srv/test_file
+    my_test "$(sudo bash "$test_location" test_file 2>&1 >/dev/null)" 3
 
-    echo "Test 4: Group that already exists, return should be 4"
+    echo "Test 4: Uroup that already exists, return should be 4"
     # create the group
     sudo groupadd fakegroup
     my_test "$(sudo bash "$test_location" fakegroup fakeuser 2>&1 >/dev/null)" 4
@@ -135,7 +116,10 @@ crear_usuarios_tests() {
     echo "Test 4: User that already exists, return should be 5"
     # create the user
     sudo useradd fakeuser
-    my_test "$(sudo bash "$test_location" fakegroup fakeuser 2>&1 >/dev/null)" 5
+    my_test "$(
+        sudo bash "$test_location" fakegroup fakeuser 2>&1 >/dev/null
+
+    )" 5
     # delete the user
     sudo userdel fakeuser
 
@@ -148,27 +132,26 @@ crear_usuarios_tests() {
         "
     echo "$str"
 
+    printf "\t%s" "Test 5.1: Return should be 0"
     password=$(sudo bash ./scripts/crear_usuarios.sh proyectoX usu1 usu2 usu3)
-    ret_val="$?"
-    echo "Test 5.1: Group should be created"
+    my_test "$?" 0
+
+    echo "Test 5.2: Group should be created"
     my_test "$(
         sudo getent group proyectoX
         echo $?
-    )" "0" test5_cleanup
-    echo "Test 5.2: Users should be created"
+    )" "0"
+    echo "Test 5.3: Users should be created"
     for user in usu1 usu2 usu3; do
         my_test "$(
             sudo getent passwd "$user"
             echo $?
-        )" "0" test5_cleanup
+        )" "0"
     done
-    echo -e "Test 5.3: Passwords should be set and displayed following the pattern: \n\tusu1:password1\n\tusu2:password2\n\tusu3:password3"
+    echo -e "Test 5.4: Passwords should be set and displayed following the pattern: usu1:password1\nusu2:password2\nusu3:password3"
     # separate the password string into an array
-    echo "$password"
     IFS='\n' read -r -a users_passwords <<<"$password"
     for user_password in "${users_passwords[@]}"; do
-        # print the user and password
-        echo -e "\tUser:passord => $user_password"
         # separate the user and password
         IFS=':' read -r -a user_password <<<"$user_password"
         # check if the password is correct
@@ -179,11 +162,16 @@ crear_usuarios_tests() {
             IFS='$' read -r -a generated_passwd_array <<<"$(mkpasswd -m SHA-512 "${user_password[1]}" "${real_passwd_array[2]}")"
             IFS='/' read -r -a generated_hash <<<"${generated_passwd_array[3]}"
             # compare the hashes, store the result in a variable
-            [ "${real_hashed[0]}" == "${generated_hash[0]}" ]
-        )" 0 test5_cleanup
+            [ "${real_hashed[0]}" == "${generated_hash[0]}" ] && echo "B" || echo "1"
+        )" 0
     done
-    echo -e "\tTest 5.4: Return should be 0"
-    assert ret_val 0 test5_cleanup
+
+    # delete the users using a loop and the delete_user function
+    for user in usu1 usu2 usu3; do
+        delete_user "$user"
+    done
+    # delete the group
+    sudo groupdel proyectoX
 }
 
 delete_user() {
@@ -209,3 +197,4 @@ maestro_tests() {
 }
 
 selection_dialog
+trap cleanup EXIT
