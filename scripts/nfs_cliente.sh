@@ -12,18 +12,29 @@ run_checks() {
 		error "Numero de argumentos incorrecto $FORMATO_MANDATO" 2
 	fi
 
-	# directories exist
+	# check that the directories don't exist, if they do make sure theyre not files and are directories
 	for I in $(seq 3 3 $#); do
 		VAL=${!I}
-		test -d "$VAL" || error "Directorio \"$VAL\" no existe" 3
+		if [ -e "$VAL" ]; then
+			test -d "$VAL" || error "Directorio \"$VAL\" no es un directorio" 3
+		fi
 	done
 
 	# check that nfs-common is installed and install it if not
-	if dpkg -l | grep -q 'nfs-common' >/dev/null; then
+	dpkg -l | grep -q 'nfs-common' || (
 		echo "No se encontró nfs-common" >&2
 		echo "Instalando nfs-common" >&2
 		apt-get -y install nfs-common
-	fi
+	)
 }
 
-#mount servidor:dir
+run_checks "$@"
+# loop through arguments by triplets
+for ((i = 1; i <= $#; i += 3)); do
+	servidor="${@:$i:1}"
+	directorio_importado="${@:$i+1:1}"
+	directorio_montaje="${@:$i+2:1}"
+	mkdir -p "$directorio_montaje"
+	mount -t nfs "$servidor:$directorio_importado" "$directorio_montaje"
+	echo "$servidor:$directorio_importado $directorio_montaje nfs defaults 0 0" >>/etc/fstab
+done

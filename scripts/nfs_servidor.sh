@@ -40,5 +40,7 @@ for ((i = 1; i <= $#; i += 3)); do
 	if [ "$host" == "0" ]; then
 		host="*"
 	fi
-	echo "$directory $host($permission)" >>/etc/exports
+	export_line="$directory $host($permission)"
+	# directory is not already exported
+	grep -Fq "$export_line" /etc/exports || echo "$export_line" >>/etc/exports
 done
