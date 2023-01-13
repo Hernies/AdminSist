@@ -7,7 +7,7 @@ error() {
 }
 
 run_checks() {
-	test $(id -u) = 0 || error "$0 debe ejecutarse como root" 1
+	test "$(id -u)" = 0 || error "$0 debe ejecutarse como root" 1
 	# check if number of arguments is a multiple of 3
 	if [ $# -lt 3 ] || [ $(($# % 3)) -ne 0 ]; then
 		error "Numero de argumentos incorrecto $FORMATO_MANDATO" 2
@@ -23,22 +23,22 @@ run_checks() {
 		test -d "$VAL" || error "Directorio \"$VAL\" no existe" 3
 	done
 
-	check that nfs-server is installed and install it if not (dpkg -l | grep nfs-kernel-server)
-	if dpkg -l | grep -q 'nfs-kernel-server' >/dev/null; then
+	# check that nfs-server is installed and install it if not (dpkg -l | grep nfs-kernel-server)
+	dpkg -l | grep -q 'nfs-kernel-server' || (
 		echo "No se encontró nfs-kernel-server" >&2
 		echo "Instalando nfs-kernel-server" >&2
 		apt-get -y install nfs-kernel-server
-	fi
+	)
 }
 
 run_checks "$@"
 # loop through arguments by triplets
 for ((i = 1; i <= $#; i += 3)); do
 	host="${@:$i:1}"
-    permission="${@:$i+1:1}"
-    directory="${@:$i+2:1}"
-    if [ "$host" == "0" ]; then
-        host="*"
-    fi
-    echo "$directory $host($permission)" 
+	permission="${@:$i+1:1}"
+	directory="${@:$i+2:1}"
+	if [ "$host" == "0" ]; then
+		host="*"
+	fi
+	echo "$directory $host($permission)" >>/etc/exports
 done

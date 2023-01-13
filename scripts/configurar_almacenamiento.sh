@@ -10,8 +10,8 @@ run_checks() {
 	test $(id -u) = 0 || error "$0 debe ejecutarse como root" 1
 
 	# comprueba la sintaxis del mandato
-	test "$2" -gt 0 &>/dev/null && POS=$(($2 + 3)) && test ${!POS} -gt 0 &>/dev/null \
-	&& test $# -eq $((3 + $2 + ${!POS} * 2)) &>/dev/null || error "$FORMATO_MANDATO" 2
+	test "$2" -gt 0 &>/dev/null && POS=$(($2 + 3)) && test "${!POS}" -gt 0 &>/dev/null &&
+		test $# -eq $((3 + $2 + ${!POS} * 2)) &>/dev/null || error "$FORMATO_MANDATO" 2
 
 	# verify percentages are correct: numeric and sum no more than 100
 	TOT=0
@@ -25,7 +25,7 @@ run_checks() {
 
 	# check that disks passed as arguments exist
 	DISCOS=$(lsblk -np --output NAME,TYPE)
-	for I in $"{@:3:$2}"; do
+	for I in "${@:3:$2}"; do
 		test "$(echo "$DISCOS" | grep -c "$I")" -eq 1 || error "disco $I no existe" 4
 	done
 
@@ -45,7 +45,7 @@ run_checks() {
 
 }
 
-lv_create (){
+lv_create() {
 	# crea los LVs
 	POS=$((POS + 1))
 	for I in $(seq $POS 2 $#); do
@@ -58,7 +58,7 @@ lv_create (){
 	done
 }
 
-main(){
+main() {
 	run_checks "$@"
 	vgcreate "$1" "${@:3:$2}" || error "error al crear el grupo de volúmenes" 4
 	lv_create "${@:3+"$2":$(3+"$2")}"
