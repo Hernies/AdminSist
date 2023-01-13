@@ -10,9 +10,10 @@ run_checks() {
 	test $(id -u) = 0 || error "$0 debe ejecutarse como root" 1
 
 	# comprueba la sintaxis del mandato
-	test "$2" -gt 0 &>/dev/null && POS=$(($2 + 3)) && test ${!POS} -gt 0 &>/dev/null && test $# -eq $((3 + $2 + ${!POS} * 2)) &>/dev/null || error "$FORMATO_MANDATO" 2
+	test "$2" -gt 0 &>/dev/null && POS=$(($2 + 3)) && test ${!POS} -gt 0 &>/dev/null \
+	&& test $# -eq $((3 + $2 + ${!POS} * 2)) &>/dev/null || error "$FORMATO_MANDATO" 2
 
-	# verifica que porcentajes son correctos: numéricos y que no suman más de 100
+	# verify percentages are correct: numeric and sum no more than 100
 	TOT=0
 	POS=$((POS + 1))
 	for I in $(seq $POS 2 $#); do
@@ -22,12 +23,13 @@ run_checks() {
 	done
 	test $TOT -gt 100 &>/dev/null && error "suma de porcentajes por encima de 100" 3
 
+	# check that disks passed as arguments exist
 	DISCOS=$(lsblk -np --output NAME,TYPE)
 	for I in $"{@:3:$2}"; do
-		test $(echo "$DISCOS" | grep -c "$I") -eq 1 || error "disco $I no existe" 4
+		test "$(echo "$DISCOS" | grep -c "$I")" -eq 1 || error "disco $I no existe" 4
 	done
 
-	# comprueba que los directorios de montaje no existen
+	# check that the directory of comprueba que los directorios de montaje no existen
 	for I in "${@:$(($POS + 1))}"; do
 		test -d "$I" || error "directorio de montaje $I no existe" 5
 	done
@@ -39,7 +41,7 @@ run_checks() {
 		apt-get -y install lmv2
 	fi
 	#check that volume group does not exist return error 7 if true
-	test $(vgdisplay | grep -c "$1") -eq 0 || error "el grupo de volúmenes $1 ya existe" 7
+	test "$(vgdisplay | grep -c "$1")" -eq 0 || error "el grupo de volúmenes $1 ya existe" 7
 
 }
 
