@@ -16,14 +16,14 @@ run_checks() {
 
 ejecuto_prueba() {
 	# execute the test on host $1, leave results in $2 and pass ${@:3} as arguments to the test\
-	echo "/tmp/scripts/"
-	# fich_salida="$2"
-	# status=0
-	# scp -r -q /tmp/scripts "$1":/tmp/ || error "No se pudo copiar el script" 1
-	# ssh -n "$1" sudo "/tmp/scripts/${@:3}" >fich_salida
-	# echo $? >status #echo $? is NOT affected by redirection
-	# test "$status" -eq 255 && echo "$fich_salida" >&2 || return 2
-	# scp -q "$1":"$2" fich_salida
+	status=0
+	fich_salida=$2
+	scp -r -q /tmp/scripts "$1":/tmp/ || return 1
+	ssh -n "$1" sudo "/tmp/scripts/${@:4}" >fich_salida
+	echo $? >status #echo $? is NOT affected by redirection
+	test "$status" -eq 255 || echo "$fich_salida" >&2 && return 1
+	test "$status" -ne 255 || echo "$fich_salida" >&2 && return $status
+	return 0
 }
 
 parse_config_file() {
@@ -55,10 +55,10 @@ parse_config_file() {
 			test -f "${line_arr[2]}" -a -w "${line_arr[2]}" || test ! -d "${line_arr[2]}" && touch -c "${line_arr[2]}" 2>/dev/null || ERROR=1
 		test "$ERROR" -eq 1 && continue # shouldn't execute the command if there was an error
 		echo "EJECUTANDO ${line_arr[0]} EN ${line_arr[1]}" >&2
-		res=$(ejecuto_prueba "$line")
-		# test "$res" -gt 3 || (error "Error en la prueba" "$res" && echo "RESULTADO ERROR=$res EN ${line[2]}")
-		# test "$res" -eq 1 || echo "RESULTADO OK SALIDA EN ${line[2]}"
-		# test "$res" -eq 2 || echo "RESULTADO UNREACHABLE SALIDA EN ${line[2]}"
+		res=$(ejecuto_prueba "${line_arr[@]}")
+		test "$res" -gt 1 || (error "Error en la prueba" "$res" && echo "RESULTADO ERROR=$res EN ${line[2]}")
+		test "$res" -eq 0 || echo "RESULTADO OK SALIDA EN ${line[2]}"
+		test "$res" -eq 1 || echo "RESULTADO UNREACHABLE SALIDA EN ${line[2]}"
 	done
 }
 
