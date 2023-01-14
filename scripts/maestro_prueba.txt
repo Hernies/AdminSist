@@ -1,14 +1,14 @@
 # máquina apagada
-KERNEL_LOG 10.0.2.33 directorio1/prueba1 kerlog-33.txt kernel_log.sh
+KERNEL_LOG 10.0.2.33 /tmp/kerlog1.txt kernel_log.sh
 # no pasa parámetro
-KERNEL_LOG 10.0.2.4 directorio1/prueba1 kerlog-4.txt kernel_log.sh
-KERNEL_LOG 10.0.2.4 directorio1/prueba1 kerlog-4.txt kernel_log.sh 15
-KERNEL_LOG 10.0.2.15 directorio1/prueba1 kerlog-15.txt kernel_log.sh 10
+KERNEL_LOG 10.0.2.4 /tmp/kerlog-4.txt kernel_log.sh
+KERNEL_LOG 10.0.2.4 /tmp/kerlog-4.txt kernel_log.sh 15
+KERNEL_LOG 10.0.2.15 /tmp/kerlog-15.txt kernel_log.sh 10
 
-CREA_USUARIOS 10.0.2.4 directorio1/prueba1 usu_contra-4 crear_usuarios.sh new-project user1 user2 user3
-CREA_USUARIOS 10.0.2.15 directorio1/prueba1 usu_contra-15 crear_usuarios.sh new-project user1 user2 user3
+CREA_USUARIOS 10.0.2.4 /tmp/usu_contra-4 crear_usuarios.sh new-project user1 user2 user3
+CREA_USUARIOS 10.0.2.15 /tmp/usu_contra-15 crear_usuarios.sh new-project user1 user2 user3
 
-CREA_ALMACENAMIENTO 10..2.15 directorio1/prueba1 configurar_almacenamiento.sh VG3 2 /dev/sdb /dev/sdc 3 33 /mnt  33 /mnt2 34 /mnt3
+CREA_ALMACENAMIENTO 10.0.2.15 /dev/null configurar_almacenamiento.sh VG3 2 /dev/sdb /dev/sdc 3 33 /mnt  33 /mnt2 34 /mnt3
 
-NFS_SRV 10.0.2.4 directorio1/prueba1 nfs_servidor.sh 10.0.2.0/24 rw /srv 0 ro /mnt
-NFS_CLNT 10.0.2.15 directorio1/prueba1 nfs_cliente.sh 10.0.2.4 /srv /mnt 10.0.2.4 /mnt /mnt4
+NFS_SRV 10.0.2.4 /dev/null nfs_servidor.sh 10.0.2.0/24 rw /srv 0 ro /mnt
+NFS_CLNT 10.0.2.15 /dev/null nfs_cliente.sh 10.0.2.4 /srv /mnt 10.0.2.4 /mnt /mnt4
