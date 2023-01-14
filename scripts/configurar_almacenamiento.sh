@@ -49,7 +49,7 @@ run_checks() {
 }
 
 lv_create() {
-	# crea los LVs\
+	# crea los LVs
 	N_LVS="$1"
 	TOTAL_EXTENTS=$(sudo vgdisplay -c VG3 | awk -F':' '{print $12}')
 	POS=2
@@ -61,6 +61,7 @@ lv_create() {
 		echo "$VAL%VG $VG_NAME"
 		lvcreate -l "$VAL%VG" "$VG_NAME" || error "error al crear el LV $MNT" 6
 		test -d "$MNT" || mkdir "$MNT"
+		# TODO revisar si es ext4 o no
 		mkfs.ext4 "/dev/$VG_NAME/lvol$NUM_LV" || error "error al formatear el LV $MNT" 7
 		mount "/dev/$VG_NAME/lvol$NUM_LV" "$MNT" || error "error al montar el LV $MNT" 8
 		((NUM_LV++))
