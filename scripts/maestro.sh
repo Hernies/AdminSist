@@ -19,10 +19,9 @@ ejecuto_prueba() {
 	status=0
 	scp -r -q /tmp/scripts/* "$1":/tmp/scripts/ || return 1
 	ssh -n "$1" sudo "/tmp/scripts/${@:4}" >"$2"
-	echo $? >status #echo $? is NOT affected by redirection
-	test "$status" -eq 255 || echo "$2" >&2 && return 1
-	test "$status" -ne 255 || echo "$2" >&2 && return $status
-	return 0
+	status=$?
+	test "$status" -eq 255 && return 1
+	return $status
 }
 
 parse_config_file() {
@@ -55,9 +54,9 @@ parse_config_file() {
 		test "$ERROR" -eq 1 && continue # shouldn't execute the command if there was an error
 		echo "EJECUTANDO ${line_arr[0]} EN ${line_arr[1]}" >&2
 		res=$(ejecuto_prueba "${line_arr[@]}")
-		test "$res" -gt 1 || (error "Error en la prueba" "$res" && echo "RESULTADO ERROR=$res EN ${line[2]}")
-		test "$res" -eq 0 || echo "RESULTADO OK SALIDA EN ${line[2]}"
-		test "$res" -eq 1 || echo "RESULTADO UNREACHABLE SALIDA EN ${line[2]}"
+		test "$res" -eq 1 || echo "RESULTADO UNREACHABLE SALIDA EN ${line_arr[2]}"
+		test "$res" -neq 0 || echo "RESULTADO ERROR=$res EN ${line_arr[2]}" && continue
+		echo "RESULTADO OK SALIDA EN ${line_arr[2]}"
 	done
 }
 
