@@ -17,12 +17,11 @@ run_checks() {
 ejecuto_prueba() {
 	# execute the test on host $1, leave results in $2 and pass ${@:3} as arguments to the test\
 	status=0
-	fich_salida=$2
-	scp -r -q /tmp/scripts "$1":/tmp/ || return 1
-	ssh -n "$1" sudo "/tmp/scripts/${@:4}" >fich_salida
+	scp -r -q /tmp/scripts/* "$1":/tmp/scripts/ || return 1
+	ssh -n "$1" sudo "/tmp/scripts/${@:4}" >"$2"
 	echo $? >status #echo $? is NOT affected by redirection
-	test "$status" -eq 255 || echo "$fich_salida" >&2 && return 1
-	test "$status" -ne 255 || echo "$fich_salida" >&2 && return $status
+	test "$status" -eq 255 || echo "$2" >&2 && return 1
+	test "$status" -ne 255 || echo "$2" >&2 && return $status
 	return 0
 }
 

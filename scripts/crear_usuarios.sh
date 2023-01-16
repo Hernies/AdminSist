@@ -25,22 +25,18 @@ run_checks() {
 	done
 }
 
-change_permissions() {
+create_group_dir_with_permissions() {
+	mkdir /srv/"$1"           # create the group dir
 	chown "$2":"$1" /srv/"$1" # user 1 is the owner of the group dir
-	chgrp "$1" /srv/"$1"      # group is the group of the group dir
+	chgrp "$1" /srv/"$1"      # group
+	umask 002                 # set the mask to 002
 	sudo sed -i 's/UMASK.*/UMASK 002/' /etc/login.defs
-	chmod 2775 -R /srv/"$1"
-	# chmod o+rx -R /srv/"$1"   # group dir is readable and executable by everyone
-	# chmod u+rwx -R /srv/"$1"  # owner can read, write and execute
-	# chmod g+rwxs -R /srv/"$1" # setuid bit for the group owner
-	# setuid permissions are set for the specified group, allowing only the owner and users associated
-	# with the specified group to create and delete entries within the directory.
+	chmod 2775 -R /srv/"$1" # set the permissions for the group dir
 }
 
 create_users() {
-
 	for user in "${@:2}"; do
-		useradd -m -g "$1" "$user"
+		useradd -m "$user" -g "$1" -s /bin/bash
 	done
 }
 
@@ -58,35 +54,27 @@ create_random_users_passwords() {
 	for user in "${@:2}"; do
 		pass="$user:$(openssl rand -base64 8)"
 		# concatenate pass to PASSWD_MSG
-		PASSWD_MSG="$PASSWD_MSG""$pass"'\n'
+		PASSWD_MSG="$PASSWD_MSG""$pass"
+		if [ "$user" != "${@: -1}" ]; then
+			PASSWD_MSG="$PASSWD_MSG""\n"
+		fi
 		echo "$pass" | chpasswd
 	done
 }
 
-add_users_to_group() {
-	for user in "${@:2}"; do
-		usermod -a -G "$1" "$user"
-	done
-}
-
-create_user_dirs() {
-	for user in "${@:2}"; do
-		mkdir -p /srv/"$1"/"$user"
-		chown "$user":"$1" /srv/"$1"/"$user"
-	done
-}
+# add_users_to_group() {
+# 	for user in "${@:2}"; do
+# 		usermod -a -G "$1" "$user"
+# 	done
+# }
 
 main() {
 	run_checks "$@"
 	groupadd "$1"
 	create_users "$@"
-	mkdir /srv/"$1"
-	change_permissions "$@"
+	create_group_dir_with_permissions "$@"
 	create_random_users_passwords "$@"
-	add_users_to_group "$@"
-	create_user_dirs "$@"
 	echo -e "$PASSWD_MSG"
 }
 
 main "$@"
-# echo "Crear usuarios"

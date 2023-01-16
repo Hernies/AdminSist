@@ -32,7 +32,7 @@ run_checks() {
 	# check that the directory of mnt does not exist
 	for I in "${@:$(($POS + 1))}"; do
 		if [ -e "$I" ]; then
-			test -d "$I" || error "Directorio \"$I\" no es un directorio" 3
+			test -d "$I" || error "Directorio \"$I\" no es un directorio" 5
 		fi
 	done
 
@@ -48,22 +48,19 @@ run_checks() {
 
 }
 
-lv_create() {
+l_vol_create() {
 	# crea los LVs
-	N_LVS="$1"
-	TOTAL_EXTENTS=$(sudo vgdisplay -c VG3 | awk -F':' '{print $12}')
 	POS=2
 	NUM_LV=0
 	for I in $(seq $POS 2 $#); do
 		VAL=${!I}
 		((I++))
 		MNT=${!I}
-		echo "$VAL%VG $VG_NAME"
 		lvcreate -l "$VAL%VG" "$VG_NAME" || error "error al crear el LV $MNT" 6
-		test -d "$MNT" || mkdir "$MNT"
-		# TODO revisar si es ext4 o no
+		test -d "$MNT" || mkdir -p "$MNT"
 		mkfs.ext4 "/dev/$VG_NAME/lvol$NUM_LV" || error "error al formatear el LV $MNT" 7
 		mount "/dev/$VG_NAME/lvol$NUM_LV" "$MNT" || error "error al montar el LV $MNT" 8
+		echo "/dev/$VG_NAME/lvol$NUM_LV $MNT ext4 defaults 0 0" >>/etc/fstab
 		((NUM_LV++))
 	done
 }
@@ -72,7 +69,7 @@ main() {
 	run_checks "$@"
 	vgcreate "$1" "${@:3:$2}" || error "error al crear el grupo de volúmenes" 4
 	export VG_NAME="$1"
-	lv_create "${@:3+$2}"
+	l_vol_create "${@:3+$2}"
 }
 
 main "$@"

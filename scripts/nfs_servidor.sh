@@ -43,4 +43,7 @@ for ((i = 1; i <= $#; i += 3)); do
 	export_line="$directory $host($permission)"
 	# directory is not already exported
 	grep -Fq "$export_line" /etc/exports || echo "$export_line" >>/etc/exports
+	exportfs -ra &>/dev/null
 done
+# just in case the service is not running
+systemctl status nfs-server 2 &>/dev/null
